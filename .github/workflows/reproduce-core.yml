@@ -1,14 +1,17 @@
-name: Reproduce Core (CPU)
+name: Reproduce Core (Windows team runner)
+
 
 on:
   workflow_dispatch:
 
+
 permissions:
   contents: read
 
+
 jobs:
   reproduce:
-    runs-on: ubuntu-22.04
+    runs-on: LTR-DQN
     timeout-minutes: 360
     env:
       MPLBACKEND: Agg
@@ -46,3 +49,4 @@ jobs:
             temp/train_manifest.json
           if-no-files-found: warn
           retention-days: 14
+
