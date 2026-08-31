@@ -1,14 +1,17 @@
 name: Reproduce T6
 
+
 on:
   workflow_dispatch:
+
 
 permissions:
   contents: read
 
+
 jobs:
   reproduce:
-    runs-on: ubuntu-22.04
+    runs-on: LTR-DQN
     timeout-minutes: 720
     env:
       MPLBACKEND: Agg
@@ -47,3 +50,4 @@ jobs:
             results/appendix_figures/
           if-no-files-found: warn
           retention-days: 14
+
