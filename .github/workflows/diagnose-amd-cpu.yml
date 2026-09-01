@@ -1,0 +1,100 @@
+name: Diagnose Intel vs AMD CPU
+
+on:
+  push:
+    branches:
+      - diagnose-amd-cpu-20260901
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: windows-2022
+    timeout-minutes: 90
+    env:
+      MPLBACKEND: Agg
+      PYTHONHASHSEED: "0"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      NUMEXPR_NUM_THREADS: "1"
+      LTR_DQN_TRACE: "1"
+      LTR_DQN_TRACE_DIR: runs/github-amd-trace/dqn_trace
+      LTR_DQN_TRACE_LIMIT: "128"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Record runner hardware
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force diagnostics | Out-Null
+          Get-CimInstance Win32_Processor |
+            Select-Object Name, Manufacturer, NumberOfCores, NumberOfLogicalProcessors |
+            Format-List | Tee-Object diagnostics/cpu.txt
+          Get-CimInstance Win32_ComputerSystem |
+            Select-Object Manufacturer, Model, SystemType |
+            Format-List | Tee-Object -Append diagnostics/cpu.txt
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.9.13
+          architecture: x64
+          cache: pip
+          cache-dependency-path: requirements-lock.txt
+
+      - name: Install locked environment
+        shell: pwsh
+        run: |
+          python -m pip install -r requirements-lock.txt
+          python -m pip check
+          python -c "from model import validate_runtime; validate_runtime()"
+          python -c "from model import runtime_versions; import json; print(json.dumps(runtime_versions(), indent=2))" |
+            Tee-Object diagnostics/runtime.json
+
+      - name: Record source and raw-data hashes
+        shell: pwsh
+        run: |
+          Get-FileHash -Algorithm SHA256 `
+            train.py,main.py,experiment_core.py,dl_dqn2.py,model.py,runtime_config.py,workflow.py,sitecustomize.py,requirements-lock.txt |
+            Sort-Object Path | Format-Table -AutoSize |
+            Out-File diagnostics/source-hashes.txt
+          Get-ChildItem data -File -Recurse |
+            Get-FileHash -Algorithm SHA256 |
+            Sort-Object Path | Format-Table -AutoSize |
+            Out-File diagnostics/data-hashes.txt
+
+      - name: Train three-year Rank MART and DQN
+        shell: pwsh
+        run: python train.py --run_dir runs/github-amd-trace --models all --markets Main,ChiNext --years 3
+
+      - name: Export three-year T4
+        shell: pwsh
+        run: python main.py --run_dir runs/github-amd-trace --tables T4 --markets Main,ChiNext --no_baselines --export_csvs
+
+      - name: Record generated artifact hashes
+        if: always()
+        shell: pwsh
+        run: |
+          Get-ChildItem runs/github-amd-trace/rankings -File -ErrorAction SilentlyContinue |
+            Get-FileHash -Algorithm SHA256 |
+            Sort-Object Path | Format-Table -AutoSize |
+            Out-File diagnostics/ranking-hashes.txt
+          Get-ChildItem runs/github-amd-trace/actions -File -ErrorAction SilentlyContinue |
+            Get-FileHash -Algorithm SHA256 |
+            Sort-Object Path | Format-Table -AutoSize |
+            Out-File diagnostics/action-hashes.txt
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: amd-cpu-diagnostics-${{ github.run_id }}
+          path: |
+            diagnostics/
+            runs/github-amd-trace/train_manifest.json
+            runs/github-amd-trace/dqn_trace/
+            runs/github-amd-trace/results/combined/
+          if-no-files-found: warn
+          retention-days: 14
