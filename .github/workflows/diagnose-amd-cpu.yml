@@ -20,6 +20,8 @@ jobs:
       MKL_NUM_THREADS: "1"
       OPENBLAS_NUM_THREADS: "1"
       NUMEXPR_NUM_THREADS: "1"
+      ATEN_CPU_CAPABILITY: default
+      MKL_CBWR: COMPATIBLE
       LTR_DQN_TRACE: "1"
       LTR_DQN_TRACE_DIR: runs/github-amd-trace/dqn_trace
       LTR_DQN_TRACE_LIMIT: "128"
