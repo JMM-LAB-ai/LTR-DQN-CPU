@@ -197,6 +197,8 @@ def runtime_versions() -> dict[str, str]:
         "omp_num_threads": os.environ.get("OMP_NUM_THREADS", ""),
         "mkl_num_threads": os.environ.get("MKL_NUM_THREADS", ""),
         "openblas_num_threads": os.environ.get("OPENBLAS_NUM_THREADS", ""),
+        "aten_cpu_capability": os.environ.get("ATEN_CPU_CAPABILITY", ""),
+        "mkl_cbwr": os.environ.get("MKL_CBWR", ""),
     }
 
 

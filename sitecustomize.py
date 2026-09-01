@@ -20,6 +20,8 @@ for _name in (
 
 os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
 os.environ["XGBOOST_BUILD_DOC"] = "0"
+os.environ["ATEN_CPU_CAPABILITY"] = "default"
+os.environ["MKL_CBWR"] = "COMPATIBLE"
 
 # Set both PyTorch pools before any application module can create a tensor.
 # Calling set_num_interop_threads later is unsafe because PyTorch may already
