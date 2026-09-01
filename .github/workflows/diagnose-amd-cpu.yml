@@ -70,11 +70,11 @@ jobs:
 
       - name: Train three-year Rank MART and DQN
         shell: pwsh
-        run: python train.py --run_dir runs/github-amd-trace --models all --markets ChiNext --years 3 --ranker_tree_method hist
+        run: python train.py --run_dir runs/github-amd-trace --models all --markets Main,ChiNext --years 3 --ranker_tree_method approx
 
       - name: Export three-year T4
         shell: pwsh
-        run: python main.py --run_dir runs/github-amd-trace --tables T4 --markets ChiNext --no_baselines --export_csvs
+        run: python main.py --run_dir runs/github-amd-trace --tables T4 --markets Main,ChiNext --no_baselines --export_csvs
 
       - name: Record generated artifact hashes
         if: always()
