@@ -19,12 +19,7 @@ for _name in (
     os.environ[_name] = "1"
 os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
 
-DEFAULT_DEVICE = os.environ.get("LTR_DQN_DEVICE", "cpu").strip().lower()
-if DEFAULT_DEVICE not in {"cpu", "cuda", "gpu", "auto"}:
-    raise ValueError(
-        "LTR_DQN_DEVICE must be one of cpu, cuda, gpu or auto; "
-        f"got {DEFAULT_DEVICE!r}"
-    )
+DEFAULT_DEVICE = "cpu"
 
 
 DEFAULT_TRAINING_SEEDS = {
@@ -196,15 +191,6 @@ def configure_torch_threads(torch_module=None) -> None:
 
 
 def torch_device():
-    """Return the reproducibility device (CPU unless explicitly opted in)."""
+    """Return the fixed single-CPU device used by the reproduction."""
     import torch
-
-    if DEFAULT_DEVICE in {"cuda", "gpu"}:
-        if not torch.cuda.is_available():
-            raise RuntimeError(
-                "LTR_DQN_DEVICE requests CUDA, but no CUDA device is available."
-            )
-        return torch.device("cuda:0")
-    if DEFAULT_DEVICE == "auto" and torch.cuda.is_available():
-        return torch.device("cuda:0")
     return torch.device("cpu")
