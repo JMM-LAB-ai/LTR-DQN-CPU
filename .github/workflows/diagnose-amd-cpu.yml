@@ -1,4 +1,4 @@
-name: Diagnose Intel vs AMD CPU
+name: Diagnose Intel vs AMD CPU T5
 
 on:
   push:
@@ -23,7 +23,7 @@ jobs:
       ATEN_CPU_CAPABILITY: default
       MKL_CBWR: COMPATIBLE
       LTR_DQN_TRACE: "1"
-      LTR_DQN_TRACE_DIR: runs/github-amd-trace/dqn_trace
+      LTR_DQN_TRACE_DIR: runs/github-amd-t5-trace/dqn_trace
       LTR_DQN_TRACE_LIMIT: "128"
 
     steps:
@@ -68,23 +68,23 @@ jobs:
             Sort-Object Path | Format-Table -AutoSize |
             Out-File diagnostics/data-hashes.txt
 
-      - name: Train three-year Rank MART and DQN
+      - name: Train two/four-year Rank MART and DQN
         shell: pwsh
-        run: python train.py --run_dir runs/github-amd-trace --models all --markets Main,ChiNext --years 3 --ranker_tree_method approx
+        run: python train.py --run_dir runs/github-amd-t5-trace --models all --markets Main,ChiNext --years 2,4 --ranker_tree_method approx
 
-      - name: Export three-year T4
+      - name: Export T5
         shell: pwsh
-        run: python main.py --run_dir runs/github-amd-trace --tables T4 --markets Main,ChiNext --no_baselines --export_csvs
+        run: python main.py --run_dir runs/github-amd-t5-trace --tables T5 --markets Main,ChiNext --no_baselines --export_csvs
 
       - name: Record generated artifact hashes
         if: always()
         shell: pwsh
         run: |
-          Get-ChildItem runs/github-amd-trace/rankings -File -ErrorAction SilentlyContinue |
+          Get-ChildItem runs/github-amd-t5-trace/rankings -File -ErrorAction SilentlyContinue |
             Get-FileHash -Algorithm SHA256 |
             Sort-Object Path | Format-Table -AutoSize |
             Out-File diagnostics/ranking-hashes.txt
-          Get-ChildItem runs/github-amd-trace/actions -File -ErrorAction SilentlyContinue |
+          Get-ChildItem runs/github-amd-t5-trace/actions -File -ErrorAction SilentlyContinue |
             Get-FileHash -Algorithm SHA256 |
             Sort-Object Path | Format-Table -AutoSize |
             Out-File diagnostics/action-hashes.txt
@@ -92,11 +92,11 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: amd-cpu-diagnostics-${{ github.run_id }}
+          name: amd-cpu-t5-diagnostics-${{ github.run_id }}
           path: |
             diagnostics/
-            runs/github-amd-trace/train_manifest.json
-            runs/github-amd-trace/dqn_trace/
-            runs/github-amd-trace/results/combined/
+            runs/github-amd-t5-trace/train_manifest.json
+            runs/github-amd-t5-trace/dqn_trace/
+            runs/github-amd-t5-trace/results/combined/
           if-no-files-found: warn
           retention-days: 14
